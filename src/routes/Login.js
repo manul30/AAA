@@ -28,7 +28,7 @@ export const Login = () =>{
         e.preventDefault();
         console.log("Hello World");
         console.log(API);
-        const res = await fetch(`${API}/login`,{
+        const res = await fetch(`/login`,{
             method: 'POST',
             headers:{
                 'Content-Type': 'application/json',
@@ -125,9 +125,7 @@ export const Login = () =>{
             </div>
             </div>
         </form>
-
             <div>
-
             </div>
 
         </div>

@@ -101,11 +101,12 @@ def createUser():
   print(request.json)
   print(request.json['tipo'])
   id = db.insert_one({
+    'avatar_url': "https://i.imgur.com/hepj9ZS.jpg",
     'name': request.json['name'],
     'email': request.json['email'],
-    'password': request.json['password'],
-    'intentos': request.json['intentos'],
-    'tipo': "admin" if request.json['tipo'] else "client"  
+    'password': request.json['password'],  
+    'intentos': request.json['intentos'],  # enviar un numero por defecto i.e. 3, pero el admin q pueda modificar
+    'tipo': "admin" if request.json['tipo'] else "client"   # enviar "" para ser cliente, sino "admin" para ser admin
   })
   print(id.inserted_id)
   return str(id.inserted_id)
@@ -118,12 +119,18 @@ def getUsers():
     users = []
     print("consulta get /users")
     for doc in db.find():
+      try:
         users.append({
             '_id': str(ObjectId(doc['_id'])),
+            'avatar_url': doc['avatar_url'],
             'name': doc['name'],
             'email': doc['email'],
-            'password': doc['password']
+            'password': doc['password'],
+            'intentos': doc['intentos'],
+            'tipo': doc['tipo']
         })
+      except:
+        pass
     return jsonify(users)
 
 ### --------- LISTAR PROYECTOS ----------- ###
@@ -223,9 +230,6 @@ def web_scraping():
     'youtube_results': temp
   })
   return response
-
-
-
 
 
 if __name__ == "__main__":

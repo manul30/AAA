@@ -69,13 +69,50 @@ def nlu_data(data):
   response = [nlu_twitter, nlu_youtube]
   return response
 
-@app.route('/get_social_listening', methods=['POST'])
-def social_listening():
-  id = request.json['id']
+# PONDERADO DE SOCIAL MEDIA LISTENING
+def social_listening(id):
   proyecto = db2.find_one({'_id': ObjectId(id)})
-  for i in range(len(data['items'])):
-    emotion= proyecto['nlu_twitter']['keywords']['emotion']
-  return {proyecto['nlu_twitter']}
+  temp = []
+  sentiment = []
+  emotion = []
+  suma = 0
+  suma2 = 0
+  
+  print(type(proyecto['nlu_twitter']))
+  for i in proyecto['nlu_twitter'].keys():
+    temp.append(proyecto['nlu_twitter'][i])
+    a =temp[len(temp)-1]['keywords']
+    try:
+      sentiment.append(a[0]['sentiment'])
+      emotion.append(a[0]['emotion'])
+    except:
+      pass
+  for i in sentiment:
+    suma+=i['score']
+  suma=suma/len(sentiment)
+  sadness = 0
+  disgust = 0
+  fear = 0
+  joy = 0
+  anger = 0
+  for i in emotion:
+    sadness+=i['sadness']
+    anger+=i['anger']
+    disgust+=i['disgust']
+    fear+=i['fear']
+    joy+=i['joy']
+  emotion = {
+    'ovr_sentiment': suma, 
+    'sadness': sadness/len(emotion),
+    'disgust': disgust/len(emotion),
+    'fear': fear/len(emotion),
+    'joy': joy/len(emotion),
+    'fear': fear/len(emotion)
+  }
+  db2.update_one({'_id': ObjectId(id)}, {"$set": {
+    'total_results': emotion 
+  }})
+  return
 
 
 
@@ -98,7 +135,6 @@ def sentimental_analysis(id):       # id del proyecto
 #####################################################################################################
 #############################---------------- ROUTES -------------------#############################
 #####################################################################################################
-
 
 #-------######################-------#
 #-------## REQUEST DE ADMIN ##-------#
@@ -274,6 +310,7 @@ def web_scraping():
     'youtube_results': temp
   })
   sentimental_analysis(str(id.inserted_id))
+  social_listening(str(id.inserted_id))
   return str(id.inserted_id)
 
 if __name__ == "__main__":

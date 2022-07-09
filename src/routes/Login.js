@@ -40,7 +40,7 @@ export const Login = () =>{
         });
         const data = await res.json();
         console.log(data)
-        await res.json();
+        //sawait res.json();
     };
 
     const register = async () => {

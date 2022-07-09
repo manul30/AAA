@@ -28,8 +28,8 @@ db2 = mongo.db.proyectos
 
 def cleanYoutubeData(data):
   youtubeResults= []
-  print(type(data))
-  print(len(data['items']))
+  #print(type(data))
+  #print(len(data['items']))
   for i in range(len(data['items'])):
     d = {}
     authorName = data['items'][i]['snippet']['topLevelComment']['snippet']['authorDisplayName']
@@ -69,6 +69,11 @@ def nlu_data(data):
   return response
 
 ### ----------- ANALISIS DE SENTIMIENTO ------------- ###
+
+@app.route('/prueba', methods=['GET'])
+def prueba():
+  return "Hello World!!"
+
 @app.route('/nlu', methods=['GET'])
 def sentimental_analysis(id = "62c0683c912eb18abfc8017f"):       # id del proyecto
   proyecto = db2.find_one({'_id': ObjectId(id)})
@@ -94,11 +99,13 @@ def sentimental_analysis(id = "62c0683c912eb18abfc8017f"):       # id del proyec
 @app.route('/users', methods=['POST'])
 def createUser():
   print(request.json)
+  print(request.json['tipo'])
   id = db.insert_one({
     'name': request.json['name'],
     'email': request.json['email'],
     'password': request.json['password'],
-    'intentos': request.json['intentos']
+    'intentos': request.json['intentos'],
+    'tipo': "admin" if request.json['tipo'] else "client"  
   })
   print(id.inserted_id)
   return str(id.inserted_id)
@@ -109,6 +116,7 @@ def createUser():
 @app.route('/users', methods=['GET'])
 def getUsers():
     users = []
+    print("consulta get /users")
     for doc in db.find():
         users.append({
             '_id': str(ObjectId(doc['_id'])),
@@ -118,6 +126,26 @@ def getUsers():
         })
     return jsonify(users)
 
+### --------- LISTAR PROYECTOS ----------- ###
+
+# Funcion para la consulta de usuarios
+@app.route('/projects', methods=['GET'])
+def getProjects():
+    projects = []
+    print("consulta get /projects")
+    for doc in db2.find():
+      try:
+        projects.append({
+          '_id': str(ObjectId(doc['_id'])),
+          'usuario' : doc['usuario'],
+          'mainWord' : doc['mainWord'],
+          'tags' : doc['tags'],
+          'twitter_results': doc['twitter_results'],
+          'youtube_results': doc['youtube_results']
+        })
+      except:
+        pass
+    return jsonify(projects)
 
 ### --------- LISTAR USUARIO POR ID ----------- ###
 
@@ -165,10 +193,12 @@ def updateUser(id):
 @cross_origin(supports_credentials=True)
 def login():
   user = db.find_one({'email': request.json['email']})
+  print(type)
+  if user == None:
+    return jsonify(str("NOT FOUND"))
   if request.json['password'] == user['password']:
     return jsonify(str(user))
-  else:
-    return jsonify(str("Usuario No encontrado"))
+  
 
 ### ----------- SCRAPING ------------- ###
 

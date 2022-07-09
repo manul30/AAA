@@ -1,5 +1,6 @@
 
 
+#from crypt import methods
 import json
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo, ObjectId
@@ -68,6 +69,16 @@ def nlu_data(data):
   response = [nlu_twitter, nlu_youtube]
   return response
 
+@app.route('/get_social_listening', methods=['POST'])
+def social_listening():
+  id = request.json['id']
+  proyecto = db2.find_one({'_id': ObjectId(id)})
+  for i in range(len(data['items'])):
+    emotion= proyecto['nlu_twitter']['keywords']['emotion']
+  return {proyecto['nlu_twitter']}
+
+
+
 ### ----------- ANALISIS DE SENTIMIENTO ------------- ###
 
 @app.route('/prueba', methods=['GET'])
@@ -75,14 +86,14 @@ def prueba():
   return "Hello World!!"
 
 @app.route('/nlu', methods=['GET'])
-def sentimental_analysis(id = "62c0683c912eb18abfc8017f"):       # id del proyecto
+def sentimental_analysis(id):       # id del proyecto
   proyecto = db2.find_one({'_id': ObjectId(id)})
   [nlu_twitter, nlu_youtube]= nlu_data(proyecto)
   db2.update_one({'_id': ObjectId(id)}, {"$set": {
     'nlu_twitter': nlu_twitter, 
     'nlu_youtube': nlu_youtube
   }})
-  return {'twitter':nlu_twitter, 'youtube':nlu_youtube}
+  return 
 
 #####################################################################################################
 #############################---------------- ROUTES -------------------#############################
@@ -119,18 +130,36 @@ def getUsers():
     users = []
     print("consulta get /users")
     for doc in db.find():
+      #print(doc['avatar_url'] if doc['avatar_url'] else "")
       try:
         users.append({
             '_id': str(ObjectId(doc['_id'])),
-            'avatar_url': doc['avatar_url'],
+            'avatar_url': doc['avatar_url'] ,
             'name': doc['name'],
             'email': doc['email'],
             'password': doc['password'],
             'intentos': doc['intentos'],
             'tipo': doc['tipo']
-        })
+          })
       except:
-        pass
+        try:
+          users.append({
+            '_id': str(ObjectId(doc['_id'])),
+            'name': doc['name'],
+            'email': doc['email'],
+            'password': doc['password'],
+            'intentos': doc['intentos'],
+            'tipo': doc['tipo']
+          })
+        except:
+          users.append({
+            '_id': str(ObjectId(doc['_id'])),
+              'name': doc['name'],
+              'email': doc['email'],
+              'password': doc['password'],
+              'intentos': doc['intentos'],
+              #'tipo': doc['tipo']
+          })
     return jsonify(users)
 
 ### --------- LISTAR PROYECTOS ----------- ###
@@ -206,6 +235,21 @@ def login():
   if request.json['password'] == user['password']:
     return jsonify(str(user))
   
+### ---------- PROYECTO ------------ ###
+@app.route('/project/<id>', methods=['GET'])
+def getProject(id):
+  proyecto = db2.find_one({'_id': ObjectId(id)})
+  print(proyecto)
+  return jsonify({
+      '_id': str(ObjectId(proyecto['_id'])),
+      'mainWord': proyecto['mainWord'],
+      'tags': proyecto['tags'],
+      'twitter_results': proyecto['twitter_results'],
+      'youtube_results': proyecto['youtube_results'],
+      'nlu_twitter': proyecto['nlu_twitter'],
+      'nlu_youtube': proyecto['nlu_youtube']
+})
+
 
 ### ----------- SCRAPING ------------- ###
 
@@ -229,8 +273,8 @@ def web_scraping():
     'twitter_results': twitter,
     'youtube_results': temp
   })
-  return response
-
+  sentimental_analysis(str(id.inserted_id))
+  return str(id.inserted_id)
 
 if __name__ == "__main__":
     app.run(debug=True)
